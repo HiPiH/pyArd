@@ -1,4 +1,11 @@
-const unsigned int MAX_MESSAGE_LENGTH = 10;
+const unsigned int MAX_MESSAGE_LENGTH = 5;
+static int message[MAX_MESSAGE_LENGTH];
+
+#define MOTOR1 0
+#define MOTOR2 1
+#define MOTOR3 2
+#define MOTOR1 3
+#define SERVO1 4
 
 
 void setup() {
@@ -11,17 +18,24 @@ void readCommand()
 {
   while (Serial.available() > 0)
    {
-     static char message[MAX_MESSAGE_LENGTH];
+     
      static unsigned int message_pos = 0;
-     char inByte = Serial.read();
+     int inByte = Serial.read();
      if ( inByte != '\n' && (message_pos < MAX_MESSAGE_LENGTH - 1) )
      {
-       message[message_pos] = inByte;
+       message[message_pos] = inByte-100;
        message_pos++;
      }
      else
      {
-       Serial.print("#done\n");
+       message[message_pos] = '\0';
+       Serial.print("#");
+       for(int x = 0; x<MAX_MESSAGE_LENGTH; x++)
+       {
+          Serial.print(message[x],DEC);
+          Serial.print(",");
+       }
+       Serial.print("\n");
        message_pos = 0;
      }
    }
