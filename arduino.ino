@@ -2,7 +2,7 @@
 #include <Servo.h>
 
 const unsigned int MAX_MESSAGE_LENGTH = 5;
-static int message[MAX_MESSAGE_LENGTH];
+int message[MAX_MESSAGE_LENGTH];
 
 #define MOTOR1 0
 #define MOTOR2 1
@@ -32,48 +32,43 @@ void setup() {
 }
 
 
+unsigned int message_pos = 0;
 void readCommand()
 {
-  while (Serial.available() > 0)
-   {
-     
-     static unsigned int message_pos = 0;
-     int inByte = Serial.read();
-     if ( inByte != '\n' && (message_pos < MAX_MESSAGE_LENGTH - 1) )
-     {
-       message[message_pos] = inByte-100;
-       message_pos++;
-     }
-     else
-     {
-       message[message_pos] = '\0';
-       Serial.print("#");
-       for(int x = 0; x<MAX_MESSAGE_LENGTH; x++)
-       {
-          Serial.print(message[x],DEC);
-          Serial.print(",");
-       }
-       Serial.print("\n");
-       message_pos = 0;
-     }
-   }
+  if(Serial.available() > 0)
+  {
+      byte inByte = Serial.read();
+      if(inByte == '\n')
+      {
+        message_pos = 0;
+        Serial.print("#");
+         for(int x = 0; x<MAX_MESSAGE_LENGTH; x++)
+         {
+            Serial.print(message[x],DEC);
+            Serial.print(",");
+         }
+         Serial.print("\n");
+      }else{
+          message[message_pos] = inByte-100;
+          message_pos++;
+      }
+  }
 }
 
 
 float accel = 0;
 int direct = -1;
 int current = 60;
-void servoProcess()
-{
-   direct = REG_Array[9];
-   accel = REG_Array[10];
-   Serial.print("Servo direct:");         
-   Serial.println(direct);  
-   Serial.print("Servo accel:");         
-   Serial.println(accel);      
-}
+
 void servotik()
 { 
+  if(message[SERVO1] < 0)
+  {
+      direct = 0;
+  }else{
+      direct = 1;
+  }
+  accel = 2*(abs(message[SERVO1])/100);     
   if(accel != 0)
   {
   
@@ -107,10 +102,17 @@ struct motorStatus{
 motorStatus lastMotorsStatrus[4];
 
 void motortik(){
+  int d = 0;
+  int s = 0;
   for(int x=0;x<4;x++)
   {
-    int d = REG_Array[x*2+1];
-    int s = REG_Array[x*2+2];
+    if(message[x] < 0)
+    {
+        d = 0;
+    }else{
+        d = 1;
+    }
+    s = 256*(abs(message[x])/100);     
     motorStatus last_status = lastMotorsStatrus[x];
     
     if(s == 0)
@@ -141,6 +143,6 @@ void motortik(){
 void loop() 
 {
     readCommand();
-    motortik();
+    //motortik();
     servotik();
 }
